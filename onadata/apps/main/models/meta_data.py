@@ -41,13 +41,13 @@ def upload_to(instance, filename):
 
 
 def unique_type_for_form(xform, data_type, data_value=None, data_file=None):
-    result = type_for_form(xform, data_type)
+    all_matches = type_for_form(xform, data_type)
     modified = False
-    if not len(result):
+    if not len(all_matches):
         result = MetaData(data_type=data_type, xform=xform)
         modified = True
     else:
-        result = result[0]
+        result = all_matches[0]
     if data_value:
         result.data_value = data_value
         modified = True
