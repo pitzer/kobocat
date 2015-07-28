@@ -409,8 +409,7 @@ def export_list(request, username, id_string, export_type):
             return HttpResponseBadRequest(
                 _("%s is not a valid export type" % export_type))
 
-    metadata = MetaData.objects.filter(xform=xform,
-                                       data_type="external_export")\
+    metadata = MetaData.type_for_form(xform, 'external_export')\
         .values('id', 'data_value')
 
     for m in metadata:
