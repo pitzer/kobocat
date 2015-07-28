@@ -396,20 +396,29 @@ def show(request, username=None, id_string=None, uuid=None):
         XForm.objects.filter(user__username__iexact=request.user.username,
                              id_string__exact=id_string + XForm.CLONED_SUFFIX)
     ) > 0
-    data['public_link'] = MetaData.public_link(xform)
+    # Retrieve all MetaData for a form initially to avoid extra database calls.
+    form_metadata = MetaData.metadata_for_form(xform)
+    data['public_link'] = MetaData.public_link(
+        xform, form_metadata=form_metadata)
     data['is_owner'] = is_owner
     data['can_edit'] = can_edit
     data['can_view'] = can_view or request.session.get('public_link')
     data['xform'] = xform
     data['content_user'] = xform.user
     data['base_url'] = "https://%s" % request.get_host()
-    data['source'] = MetaData.source(xform)
-    data['form_license'] = MetaData.form_license(xform).data_value
-    data['data_license'] = MetaData.data_license(xform).data_value
-    data['supporting_docs'] = MetaData.supporting_docs(xform)
-    data['media_upload'] = MetaData.media_upload(xform)
-    data['mapbox_layer'] = MetaData.mapbox_layer_upload(xform)
-    data['external_export'] = MetaData.external_export(xform)
+    data['source'] = MetaData.source(xform, form_metadata=form_metadata)
+    data['form_license'] = MetaData.form_license(
+        xform, form_metadata=form_metadata).data_value
+    data['data_license'] = MetaData.data_license(
+        xform, form_metadata=form_metadata).data_value
+    data['supporting_docs'] = MetaData.supporting_docs(
+        xform, form_metadata=form_metadata)
+    data['media_upload'] = MetaData.media_upload(
+        xform, form_metadata=form_metadata)
+    data['mapbox_layer'] = MetaData.mapbox_layer_upload(
+        xform, form_metadata=form_metadata)
+    data['external_export'] = MetaData.external_export(
+        xform, form_metadata=form_metadata)
 
     if is_owner:
         set_xform_owner_data(data, xform, request, username, id_string)

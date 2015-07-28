@@ -42,8 +42,9 @@ def upload_to(instance, filename):
     )
 
 
-def unique_type_for_form(xform, data_type, data_value=None, data_file=None):
-    all_matches = type_for_form(xform, data_type)
+def unique_type_for_form(xform, data_type, data_value=None, data_file=None,
+                         form_metadata=None):
+    all_matches = type_for_form(xform, data_type, form_metadata)
     modified = False
     if not len(all_matches):
         result = MetaData(data_type=data_type, xform=xform)
@@ -64,8 +65,20 @@ def unique_type_for_form(xform, data_type, data_value=None, data_file=None):
     return result
 
 
-def type_for_form(xform, data_type):
-    return MetaData.objects.filter(xform=xform, data_type=data_type)
+def type_for_form(xform, data_type, form_metadata=None):
+    # If form_metadata is specified, the database is not queried; instead, the
+    # ordered collection of MetaData objects - retrieved from metadata_for_form
+    # - is filtered for MetaData objects with the appropriate data_type.
+    if form_metadata:
+        return [m for m in form_metadata if m.data_type == data_type]
+    return MetaData.objects.filter(xform=xform, data_type=data_type)\
+        .order_by(-id)
+
+
+def metadata_for_form(xform):
+    # Order all MetaData objects to be consistent with external_export
+    # expectations and to have a guaranteed iteration order.
+    return MetaData.objects.filter(xform=xform).order_by('-id')
 
 
 def create_media(media):
@@ -157,11 +170,12 @@ class MetaData(models.Model):
         return u''
 
     @staticmethod
-    def public_link(xform, data_value=None):
+    def public_link(xform, data_value=None, form_metadata=None):
         data_type = 'public_link'
         if data_value is False:
             data_value = 'False'
-        metadata = unique_type_for_form(xform, data_type, data_value)
+        metadata = unique_type_for_form(xform, data_type, data_value,
+                                        form_metadata)
         # make text field a boolean
         if metadata.data_value == 'True':
             return True
@@ -169,22 +183,23 @@ class MetaData(models.Model):
             return False
 
     @staticmethod
-    def form_license(xform, data_value=None):
+    def form_license(xform, data_value=None, form_metadata=None):
         data_type = 'form_license'
-        return unique_type_for_form(xform, data_type, data_value)
+        return unique_type_for_form(xform, data_type, data_value, form_metadata)
 
     @staticmethod
-    def data_license(xform, data_value=None):
+    def data_license(xform, data_value=None, form_metadata=None):
         data_type = 'data_license'
-        return unique_type_for_form(xform, data_type, data_value)
+        return unique_type_for_form(xform, data_type, data_value, form_metadata)
 
     @staticmethod
-    def source(xform, data_value=None, data_file=None):
+    def source(xform, data_value=None, data_file=None, form_metadata=None):
         data_type = 'source'
-        return unique_type_for_form(xform, data_type, data_value, data_file)
+        return unique_type_for_form(xform, data_type, data_value, data_file,
+                                    form_metadata)
 
     @staticmethod
-    def supporting_docs(xform, data_file=None):
+    def supporting_docs(xform, data_file=None, form_metadata=None):
         data_type = 'supporting_doc'
         if data_file:
             doc = MetaData(data_type=data_type, xform=xform,
@@ -192,10 +207,10 @@ class MetaData(models.Model):
                            data_file=data_file,
                            data_file_type=data_file.content_type)
             doc.save()
-        return type_for_form(xform, data_type)
+        return type_for_form(xform, data_type, form_metadata)
 
     @staticmethod
-    def media_upload(xform, data_file=None, download=False):
+    def media_upload(xform, data_file=None, download=False, form_metadata=None):
         data_type = 'media'
         if data_file:
             allowed_types = settings.SUPPORTED_MEDIA_UPLOAD_TYPES
@@ -208,7 +223,8 @@ class MetaData(models.Model):
                                  data_file=data_file,
                                  data_file_type=content_type)
                 media.save()
-        return media_resources(type_for_form(xform, data_type), download)
+        return media_resources(type_for_form(xform, data_type, form_metadata),
+                               download)
 
     @staticmethod
     def media_add_uri(xform, uri):
@@ -221,7 +237,8 @@ class MetaData(models.Model):
             media.save()
 
     @staticmethod
-    def mapbox_layer_upload(xform, data=None):
+    def mapbox_layer_upload(xform, data=None, form_metadata=None,
+                            form_metadata=None):
         data_type = 'mapbox_layer'
 
         # Use a serialization/deserialization order independent of field
@@ -231,7 +248,8 @@ class MetaData(models.Model):
         data_string = None
         if data:
             data_string = '||'.join([data.get(key, '') for key in keys])
-        mapbox_layer = unique_type_for_form(xform, data_type, data_string)
+        mapbox_layer = unique_type_for_form(xform, data_type, data_string,
+                                            form_metadata)
         if mapbox_layer.data_value:
             values = mapbox_layer.data_value.split('||')
             # If we can't deserialize the data_value object, log an error and
@@ -258,8 +276,7 @@ class MetaData(models.Model):
             result.save()
             return result
 
-        return MetaData.objects.filter(xform=xform, data_type=data_type)\
-            .order_by('-id')
+        return type_for_form(xform, data_type, form_metadata)
 
     @property
     def external_export_url(self):
