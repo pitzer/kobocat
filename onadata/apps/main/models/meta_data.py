@@ -1,3 +1,4 @@
+import logging
 import mimetypes
 import os
 import requests
@@ -11,6 +12,7 @@ from django.db import models
 from django.conf import settings
 from hashlib import md5
 from onadata.apps.logger.models import XForm
+from onadata.apps.main.forms import MapboxLayerForm
 
 CHUNK_SIZE = 1024
 
@@ -221,21 +223,27 @@ class MetaData(models.Model):
     @staticmethod
     def mapbox_layer_upload(xform, data=None):
         data_type = 'mapbox_layer'
-        if data and not MetaData.objects.filter(xform=xform,
-                                                data_type='mapbox_layer'):
-            s = ''
-            for key in data:
-                s = s + data[key] + '||'
-            mapbox_layer = MetaData(data_type=data_type, xform=xform,
-                                    data_value=s)
-            mapbox_layer.save()
-        if type_for_form(xform, data_type):
-            values = type_for_form(xform, data_type)[0].data_value.split('||')
-            data_values = {}
-            data_values['map_name'] = values[0]
-            data_values['link'] = values[1]
-            data_values['attribution'] = values[2]
-            data_values['id'] = type_for_form(xform, data_type)[0].id
+
+        # Use a serialization/deserialization order independent of field
+        # declaration order.
+        keys = MapboxLayerForm.SERIALIZATION_ORDER
+
+        data_string = None
+        if data:
+            data_string = '||'.join([data.get(key, '') for key in keys])
+        mapbox_layer = unique_type_for_form(xform, data_type, data_string)
+        if mapbox_layer.data_value:
+            values = mapbox_layer.data_value.split('||')
+            # If we can't deserialize the data_value object, log an error and
+            # return nothing. The value can still be set, but this check will
+            # prevent breaking the view because of corrupted stored data.
+            if len(values) < len(keys):
+                logging.error(
+                    'Not enough fields to deserialize mapbox_layer object: %s'
+                    % mapbox_layer)
+                return None
+            data_values = {k: values[i] for i, k in enumerate(keys)}
+            data_values['id'] = mapbox_layer.id
             return data_values
         else:
             return None
