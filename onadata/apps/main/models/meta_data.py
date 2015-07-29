@@ -12,7 +12,6 @@ from django.db import models
 from django.conf import settings
 from hashlib import md5
 from onadata.apps.logger.models import XForm
-from onadata.apps.main.forms import MapboxLayerForm
 
 CHUNK_SIZE = 1024
 
@@ -237,13 +236,12 @@ class MetaData(models.Model):
             media.save()
 
     @staticmethod
-    def mapbox_layer_upload(xform, data=None, form_metadata=None,
-                            form_metadata=None):
+    def mapbox_layer_upload(xform, data=None, form_metadata=None):
         data_type = 'mapbox_layer'
 
         # Use a serialization/deserialization order independent of field
         # declaration order.
-        keys = MapboxLayerForm.SERIALIZATION_ORDER
+        keys = ['map_name', 'attribution', 'link']
 
         data_string = None
         if data:

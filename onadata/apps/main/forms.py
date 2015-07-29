@@ -232,11 +232,11 @@ class MediaForm(forms.Form):
 
 
 class MapboxLayerForm(forms.Form):
-    SERIALIZATION_ORDER = ['map_name', 'attribution', 'link']
+    # MapboxLayerForm objects are serialized by meta_data as a '||' delimited
+    # list of values in an order defined by mapbox_layer_upload's keys constant.
+    # Adding or removing fields requires a data migration as a side-effect of
+    # the serialization strategy.
 
-    # MapboxLayerForm objects are serialized as a '||' delimited list of values
-    # in SERIALIZATION_ORDER order. Adding or removing fields requires a data
-    # migration as a side-effect of the serialization strategy.
     map_name = forms.CharField(widget=forms.TextInput(), required=True,
                                max_length=255)
     attribution = forms.CharField(widget=forms.TextInput(), required=False,
