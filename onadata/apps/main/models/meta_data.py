@@ -43,7 +43,7 @@ def upload_to(instance, filename):
 
 def unique_type_for_form(xform, data_type, data_value=None, data_file=None,
                          form_metadata=None):
-    all_matches = type_for_form(xform, data_type, form_metadata)
+    all_matches = MetaData.type_for_form(xform, data_type, form_metadata)
     modified = False
     if not len(all_matches):
         result = MetaData(data_type=data_type, xform=xform)
@@ -62,22 +62,6 @@ def unique_type_for_form(xform, data_type, data_value=None, data_file=None,
     if modified:
         result.save()
     return result
-
-
-def type_for_form(xform, data_type, form_metadata=None):
-    # If form_metadata is specified, the database is not queried; instead, the
-    # ordered collection of MetaData objects - retrieved from metadata_for_form
-    # - is filtered for MetaData objects with the appropriate data_type.
-    if form_metadata:
-        return [m for m in form_metadata if m.data_type == data_type]
-    return MetaData.objects.filter(xform=xform, data_type=data_type)\
-        .order_by('-id')
-
-
-def metadata_for_form(xform):
-    # Order all MetaData objects to be consistent with external_export
-    # expectations and to have a guaranteed iteration order.
-    return MetaData.objects.filter(xform=xform).order_by('-id')
 
 
 def create_media(media):
@@ -206,7 +190,7 @@ class MetaData(models.Model):
                            data_file=data_file,
                            data_file_type=data_file.content_type)
             doc.save()
-        return type_for_form(xform, data_type, form_metadata)
+        return MetaData.type_for_form(xform, data_type, form_metadata)
 
     @staticmethod
     def media_upload(xform, data_file=None, download=False, form_metadata=None):
@@ -222,8 +206,8 @@ class MetaData(models.Model):
                                  data_file=data_file,
                                  data_file_type=content_type)
                 media.save()
-        return media_resources(type_for_form(xform, data_type, form_metadata),
-                               download)
+        return media_resources(MetaData.type_for_form(
+            xform, data_type, form_metadata), download)
 
     @staticmethod
     def media_add_uri(xform, uri):
@@ -265,7 +249,7 @@ class MetaData(models.Model):
             return None
 
     @staticmethod
-    def external_export(xform, data_value=None):
+    def external_export(xform, data_value=None, form_metadata=None):
         data_type = 'external_export'
 
         if data_value:
@@ -274,7 +258,7 @@ class MetaData(models.Model):
             result.save()
             return result
 
-        return type_for_form(xform, data_type, form_metadata)
+        return MetaData.type_for_form(xform, data_type, form_metadata)
 
     @property
     def external_export_url(self):
@@ -293,3 +277,19 @@ class MetaData(models.Model):
         parts = self.data_value.split('|')
 
         return parts[1].replace('xls', 'templates') if len(parts) > 1 else None
+
+    @classmethod
+    def type_for_form(cls, xform, data_type, form_metadata=None):
+        # If form_metadata is specified, the database is not queried; instead, the
+        # ordered collection of MetaData objects - retrieved from metadata_for_form
+        # - is filtered for MetaData objects with the appropriate data_type.
+        if form_metadata:
+            return [m for m in form_metadata if m.data_type == data_type]
+        return MetaData.objects.filter(xform=xform, data_type=data_type) \
+            .order_by('-id')
+
+    @classmethod
+    def metadata_for_form(cls, xform):
+        # Order all MetaData objects to be consistent with external_export
+        # expectations and to have a guaranteed iteration order.
+        return MetaData.objects.filter(xform=xform).order_by('-id')
