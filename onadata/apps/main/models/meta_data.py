@@ -71,7 +71,7 @@ def type_for_form(xform, data_type, form_metadata=None):
     if form_metadata:
         return [m for m in form_metadata if m.data_type == data_type]
     return MetaData.objects.filter(xform=xform, data_type=data_type)\
-        .order_by(-id)
+        .order_by('-id')
 
 
 def metadata_for_form(xform):
