@@ -158,7 +158,7 @@ class MetaData(models.Model):
         if data_value is False:
             data_value = 'False'
         metadata = unique_type_for_form(xform, data_type, data_value,
-                                        form_metadata)
+                                        form_metadata=form_metadata)
         # make text field a boolean
         if metadata.data_value == 'True':
             return True
@@ -168,18 +168,20 @@ class MetaData(models.Model):
     @staticmethod
     def form_license(xform, data_value=None, form_metadata=None):
         data_type = 'form_license'
-        return unique_type_for_form(xform, data_type, data_value, form_metadata)
+        return unique_type_for_form(xform, data_type, data_value,
+                                    form_metadata=form_metadata)
 
     @staticmethod
     def data_license(xform, data_value=None, form_metadata=None):
         data_type = 'data_license'
-        return unique_type_for_form(xform, data_type, data_value, form_metadata)
+        return unique_type_for_form(xform, data_type, data_value,
+                                    form_metadata=form_metadata)
 
     @staticmethod
     def source(xform, data_value=None, data_file=None, form_metadata=None):
         data_type = 'source'
-        return unique_type_for_form(xform, data_type, data_value, data_file,
-                                    form_metadata)
+        return unique_type_for_form(xform, data_type, data_value,
+                                    data_file, form_metadata=form_metadata)
 
     @staticmethod
     def supporting_docs(xform, data_file=None, form_metadata=None):
@@ -231,7 +233,7 @@ class MetaData(models.Model):
         if data:
             data_string = '||'.join([data.get(key, '') for key in keys])
         mapbox_layer = unique_type_for_form(xform, data_type, data_string,
-                                            form_metadata)
+                                            form_metadata=form_metadata)
         if mapbox_layer.data_value:
             values = mapbox_layer.data_value.split('||')
             # If we can't deserialize the data_value object, log an error and
