@@ -121,6 +121,7 @@ class MetaData(models.Model):
 
     class Meta:
         app_label = 'main'
+        index_together = (('xform', 'data_type'),)
         unique_together = ('xform', 'data_type', 'data_value')
 
     def save(self, *args, **kwargs):
