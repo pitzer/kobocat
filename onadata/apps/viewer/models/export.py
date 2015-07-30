@@ -85,6 +85,7 @@ class Export(models.Model):
 
     class Meta:
         app_label = "viewer"
+        index_together = (('xform', 'export_type'),)
         unique_together = (("xform", "filename"),)
 
     def save(self, *args, **kwargs):
