@@ -58,7 +58,6 @@ class SheetsClient(gspread.client.Client):
         sheet_id = resp['id']
         return self.open_by_key(sheet_id)
 
-
     def add_service_account_to_spreadsheet(self, spreadsheet):
         url = '%s/%s/permissions' % (SheetsClient.DRIVE_API_URL, spreadsheet.id)
         headers = {'Content-Type': 'application/json'}
@@ -116,6 +115,7 @@ class SheetsExportBuilder(ExportBuilder):
     flatten_repeated_fields = True
     export_xlsform = True
     google_token = None
+    export_template_url = None
     
     # Constants
     SHEETS_BASE_URL = 'https://docs.google.com/spreadsheet/ccc?key=%s&hl'
@@ -127,19 +127,27 @@ class SheetsExportBuilder(ExportBuilder):
         self.google_token = config['google_token']
         self.flatten_repeated_fields = config['flatten_repeated_fields']
         self.export_xlsform = config['export_xlsform']
-   
+        self.export_template_url = config['export_template_url']
+        
     def export(self, path, data, username, id_string, filter_query):
         self.client = SheetsClient.login_with_auth_token(self.google_token)
         
         # Create a new sheet
         print 'SheetsExportBuilder: creating new spreadsheet'
-        self.spreadsheet = self.client.new(title=self.spreadsheet_title)
+    
+        if self.export_template_url:
+            # Use an export template if provided
+            self.spreadsheet = self.client.copy(title=self.spreadsheet_title)
+        else:
+            self.spreadsheet = self.client.new(title=self.spreadsheet_title)
         self.url = self.SHEETS_BASE_URL % self.spreadsheet.id
         print 'SheetsExportBuilder: %s' % self.url
         
         # Add Service account as editor
         self.client.add_service_account_to_spreadsheet(self.spreadsheet)
+        
 
+            
         # Perform the actual export
         if self.flatten_repeated_fields:
             self.export_flattened(path, data, username, id_string, filter_query)

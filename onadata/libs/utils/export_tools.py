@@ -104,7 +104,7 @@ def generate_export(export_type, extension, username, id_string,
                     export_id=None, filter_query=None, group_delimiter='/',
                     split_select_multiples=True, binary_select_multiples=False,
                     google_token=None, flatten_repeated_fields=True,
-                    export_xlsform=True):
+                    export_xlsform=True, export_template_url=None):
     """
     Create appropriate export object given the export type
     """
@@ -135,6 +135,7 @@ def generate_export(export_type, extension, username, id_string,
         config['google_token'] = google_token
         config['flatten_repeated_fields'] = flatten_repeated_fields
         config['export_xlsform'] = export_xlsform
+        config['export_template_url'] = export_template_url
     print 'config: %s' % config
     export_builder = export_type_class_map[export_type](xform, config)
     export_builder.set_survey(xform.data_dictionary().survey)

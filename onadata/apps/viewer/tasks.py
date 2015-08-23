@@ -71,6 +71,8 @@ def create_async_export(xform, export_type, query, force_xlsx, options=None):
                 options["flatten_repeated_fields"]
         if options and "export_xlsform" in options:
             arguments["export_xlsform"] = options["export_xlsform"]
+        if options and "export_template_url" in options:
+            arguments["export_template_url"] = options["export_template_url"]
         result = create_gsheets_export.apply_async((), arguments, countdown=10)
     elif export_type == Export.ZIP_EXPORT:
         # start async export
@@ -145,7 +147,8 @@ def create_xls_export(username, id_string, export_id, query=None,
 def create_gsheets_export(
     username, id_string, export_id, query=None, group_delimiter='/', 
     split_select_multiples=True, binary_select_multiples=False, 
-    google_token=None, flatten_repeated_fields=True, export_xlsform=True):
+    google_token=None, flatten_repeated_fields=True, export_xlsform=True,
+    export_template_url=None):
     # we re-query the db instead of passing model objects according to
     # http://docs.celeryproject.org/en/latest/userguide/tasks.html#state
     try:
@@ -160,7 +163,8 @@ def create_gsheets_export(
         gen_export = generate_export(
             Export.GSHEETS_EXPORT, None, username, id_string, export_id, query,
             group_delimiter, split_select_multiples, binary_select_multiples,
-            google_token, flatten_repeated_fields, export_xlsform)
+            google_token, flatten_repeated_fields, export_xlsform,
+            export_template_url)
     except (Exception, NoRecordsFoundError) as e:
         export.internal_status = Export.FAILED
         export.save()

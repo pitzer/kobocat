@@ -327,6 +327,7 @@ def create_export(request, username, id_string, export_type):
     split_select_multiples = "options[split_select_multiples]" in request.POST
     flatten_repeated_fields = "options[flatten_repeated_fields]" in request.POST
     export_xlsform = "options[export_xlsform]" in request.POST
+    export_template_url = request.POST.get("options[export_template_url]")
     
     binary_select_multiples = getattr(settings, 'BINARY_SELECT_MULTIPLES',
                                       False)
@@ -338,6 +339,7 @@ def create_export(request, username, id_string, export_type):
         'binary_select_multiples': binary_select_multiples,
         'flatten_repeated_fields': flatten_repeated_fields,
         'export_xlsform': export_xlsform,
+        'export_template_url': export_template_url,
         'meta': meta.replace(",", "") if meta else None
     }
     print 'options %s' % options
